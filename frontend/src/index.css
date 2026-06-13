@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Lexend", ui-sans-serif, system-ui, sans-serif;
+  --font-lexend: "Lexend", sans-serif;
+
+  --color-on-surface-variant: #4b4731;
+  --color-on-primary: #ffffff;
+  --color-tertiary-fixed: #ffd9e0;
+  --color-background: #f9f9f9;
+  --color-secondary-fixed: #dde1ff;
+  --color-on-surface: #1a1c1c;
+  --color-error-container: #ffdad6;
+  --color-outline-variant: #cdc7aa;
+  --color-on-error: #ffffff;
+  --color-surface-container-low: #f3f3f4;
+  --color-tertiary-container: #ffdce2;
+  --color-on-primary-fixed-variant: #504700;
+  --color-primary-container: #ffe600;
+  --color-surface-tint: #6a5f00;
+  --color-primary-fixed: #fde400;
+  --color-surface-container-high: #e8e8e8;
+  --color-surface-container-highest: #e2e2e2;
+  --color-on-primary-container: #726600;
+  --color-inverse-surface: #2f3131;
+  --color-surface-bright: #f9f9f9;
+  --color-surface-container: #eeeeee;
+  --color-on-error-container: #93000a;
+  --color-error: #ba1a1a;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #2e5bff;
+  --color-on-secondary-fixed: #001356;
+  --color-surface-variant: #e2e2e2;
+  --color-primary: #6a5f00;
+  --color-on-secondary-container: #efefff;
+  --color-tertiary: #bb0058;
+  --color-on-tertiary: #ffffff;
+  --color-secondary-fixed-dim: #b8c3ff;
+  --color-primary-fixed-dim: #dec800;
+  --color-on-secondary-fixed-variant: #0035be;
+  --color-inverse-on-surface: #f0f1f1;
+  --color-on-background: #1a1c1c;
+  --color-surface: #f9f9f9;
+  --color-on-tertiary-fixed: #3f0019;
+  --color-inverse-primary: #dec800;
+  --color-tertiary-fixed-dim: #ffb1c3;
+  --color-outline: #7c775f;
+  --color-secondary: #0040e0;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-tertiary-fixed-variant: #8f0041;
+  --color-on-tertiary-container: #c8005e;
+  --color-on-primary-fixed: #201c00;
+  --color-surface-dim: #dadada;
+
+  /* Custom Neubrutalist Hard Shadows */
+  --shadow-hard: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  --shadow-hard-lg: 8px 8px 0px 0px rgba(0, 0, 0, 1);
+  --shadow-hard-xl: 12px 12px 0px 0px rgba(0, 0, 0, 1);
+}
+
+@layer base {
+  body {
+    @apply bg-background text-on-surface font-lexend antialiased;
+    background-image: radial-gradient(#cdc7aa 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+}
+
+@layer components {
+  .neu-border {
+    @apply border-4 border-on-surface;
+  }
+  .neu-border-sm {
+    @apply border-2 border-on-surface;
+  }
+  .neu-button {
+    @apply border-4 border-on-surface shadow-hard transition-all duration-100 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-hard-lg active:translate-x-0 active:translate-y-0 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .neu-card {
+    @apply bg-surface border-4 border-on-surface shadow-hard;
+  }
+  .neu-input {
+    @apply border-2 border-on-surface bg-surface-container-lowest px-4 py-2 outline-none focus:bg-primary-container/20 transition-colors;
+  }
+}
+
