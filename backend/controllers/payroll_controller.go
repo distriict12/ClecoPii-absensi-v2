@@ -24,16 +24,13 @@ func GetPayroll(c *gin.Context) {
 	}
 
 	// ============================================================
-	// [FITUR BARU] VALIDASI MAKSIMAL 31 HARI & TANGGAL MUNDUR
+	// VALIDASI MAKSIMAL 31 HARI & TANGGAL MUNDUR
 	// ============================================================
 	layout := "2006-01-02"
 	start, errStart := time.Parse(layout, startDate)
 	end, errEnd := time.Parse(layout, endDate)
-
 	if errStart == nil && errEnd == nil {
 		diffDays := end.Sub(start).Hours() / 24
-
-		// Cegah tanggal akhir lebih dulu dari tanggal mulai (Tanggal Mundur)
 		if diffDays < 0 {
 			c.JSON(http.StatusBadRequest, structs.ErrorResponse{
 				Success: false,
@@ -41,8 +38,6 @@ func GetPayroll(c *gin.Context) {
 			})
 			return
 		}
-
-		// Cegah penarikan data lebih dari 31 hari
 		if diffDays > 31 {
 			c.JSON(http.StatusBadRequest, structs.ErrorResponse{
 				Success: false,
@@ -52,9 +47,11 @@ func GetPayroll(c *gin.Context) {
 		}
 	}
 
-	// 1. Ambil semua data karyawan beserta nama outletnya
+	// ============================================================
+	// [SOFT DELETE] Ambil karyawan AKTIF saja sebagai basis utama
+	// ============================================================
 	var employees []models.Employee
-	if err := database.DB.Preload("Outlet").Find(&employees).Error; err != nil {
+	if err := database.DB.Preload("Outlet").Where("is_active = ?", true).Find(&employees).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
 			Success: false,
 			Message: "Gagal mengambil data karyawan",
@@ -62,57 +59,63 @@ func GetPayroll(c *gin.Context) {
 		return
 	}
 
+	// ============================================================
+	// [SOFT DELETE] Karyawan NONAKTIF tapi punya riwayat hadir
+	// di periode ini tetap disertakan — supaya gaji periode
+	// terakhir sebelum resign tidak hilang dari payroll.
+	// ============================================================
+	var inactiveEmployees []models.Employee
+	database.DB.Preload("Outlet").
+		Where("is_active = ?", false).
+		Where("EXISTS (SELECT 1 FROM attendances WHERE attendances.employee_id = employees.id AND attendances.date >= ? AND attendances.date <= ?)", startDate, endDate).
+		Find(&inactiveEmployees)
+
+	allEmployees := append(employees, inactiveEmployees...)
+
 	var payrolls []structs.PayrollResponse
 
-	// 2. Lakukan kalkulasi untuk setiap karyawan
-	for _, emp := range employees {
+	for _, emp := range allEmployees {
 		var totalHadir int64
 		var totalTelat int64
 		var totalTepat int64
 
-		// A. Hitung Total Hadir (status bukan 'absen' atau null)
 		database.DB.Model(&models.Attendance{}).
 			Where("employee_id = ? AND date >= ? AND date <= ? AND status != ?", emp.ID, startDate, endDate, "absen").
 			Count(&totalHadir)
 
-		// B. Hitung Berapa kali Telat
 		database.DB.Model(&models.Attendance{}).
 			Where("employee_id = ? AND date >= ? AND date <= ? AND status = ?", emp.ID, startDate, endDate, "telat").
 			Count(&totalTelat)
 
-		// C. Hitung Berapa kali Masuk TEPAT WAKTU
 		database.DB.Model(&models.Attendance{}).
 			Where("employee_id = ? AND date >= ? AND date <= ? AND status = ?", emp.ID, startDate, endDate, "tepat").
 			Count(&totalTepat)
 
-		// D. Hitung Bolos (Target Hari Kerja - Total Hadir)
 		bolos := emp.TargetHariKerja - int(totalHadir)
 		if bolos < 0 {
 			bolos = 0
 		}
 
-		// ─── KALKULASI MATEMATIKA ───
-
-		// 1. Hitung total bonus rajin: nominal bonus x frekuensi tepat waktu
 		bonusRajinTotal := float64(totalTepat) * emp.BonusRajin
-
-		// 2. Hitung total potongan denda
 		potonganAbsenTotal := float64(bolos) * emp.PotonganAbsen
 		potonganTelatTotal := float64(totalTelat) * emp.PotonganTelat
 
-		// 3. Gaji Bersih Akhir
 		gajiBersih := emp.GajiPokok + bonusRajinTotal - potonganAbsenTotal - potonganTelatTotal
 
-		// Antisipasi jika nama outlet belum ter-set
 		outletName := "-"
 		if emp.Outlet.Name != "" {
 			outletName = emp.Outlet.Name
 		}
 
-		// Masukkan ke dalam daftar response
+		// [SOFT DELETE] Tandai nama karyawan nonaktif agar terlihat jelas di tabel payroll
+		displayName := emp.Name
+		if !emp.IsActive {
+			displayName = emp.Name + " (Nonaktif)"
+		}
+
 		payrolls = append(payrolls, structs.PayrollResponse{
 			ID:              emp.ID,
-			EmployeeName:    emp.Name,
+			EmployeeName:    displayName,
 			OutletName:      outletName,
 			SalaryType:      emp.SalaryType,
 			TargetHariKerja: emp.TargetHariKerja,

@@ -101,14 +101,18 @@ go mod tidy
 
 ### 3. Buat file `.env`
 ```bash
-cp .env.example .env
+touch .env
 ```
 
 Isi nilai di `.env`:
 ```env
 # Koneksi Database PostgreSQL Supabase
-# Ambil dari Supabase → Settings → Database → Connection string (Transaction mode)
-DB_URL=host=xxx.pooler.supabase.com user=postgres.xxx password=xxx dbname=postgres port=6543 sslmode=require
+# Ambil dari Supabase Dashboard → Connect → Direct → Transaction pooler
+# Supabase biasanya memberi format:
+# postgresql://postgres.project-ref:[YOUR-PASSWORD]@xxx.pooler.supabase.com:6543/postgres
+#
+# Ubah ke format DSN berikut:
+DB_URL="host=xxx.pooler.supabase.com user=postgres.xxx password=PASSWORD_DATABASE dbname=postgres port=6543 sslmode=require"
 
 # Konfigurasi Aplikasi
 APP_PORT=3000
