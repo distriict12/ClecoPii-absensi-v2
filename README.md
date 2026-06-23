@@ -94,7 +94,7 @@ Dari Settings → Database, catat:
 cd backend
 ```
 
-### 2. Install dependencies
+### 2. Install dependencies 
 ```bash
 go mod tidy
 ```
